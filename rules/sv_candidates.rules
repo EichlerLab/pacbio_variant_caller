@@ -26,14 +26,14 @@ def _get_bam_path_for_batch(wildcards):
 
 # Annotate assembly candidates with coverage.
 rule get_regions:
-    input: "assembly_candidates_with_coverage.bed"
+    input: "assembly_candidates_with_coverage.bed", "gaps_in_aligned_reads.bed.gz"
     output: CANDIDATES
     params: min_coverage=str(config.get("min_coverage")), max_coverage=str(config.get("max_coverage")), max_length=str(config.get("max_candidate_length"))
     run:
         if REGIONS_TO_EXCLUDE is not None:
-            shell("set -o pipefail; bedtools intersect -a {input} -b %s -wa -v | awk '$4 >= {params.min_coverage} && $4 <= {params.max_coverage} && $3 - $2 <= {params.max_length}' > {output}" % REGIONS_TO_EXCLUDE)
+            shell("set -o pipefail; bedtools intersect -a {input[0]} -b %s -wa -v | awk '$4 >= {params.min_coverage} && $4 <= {params.max_coverage} && $3 - $2 <= {params.max_length}' > {output}" % REGIONS_TO_EXCLUDE)
         else:
-            shell("awk '$4 >= {params.min_coverage} && $4 <= {params.max_coverage} && $3 - $2 <= {params.max_length}' {input} > {output}")
+            shell("awk '$4 >= {params.min_coverage} && $4 <= {params.max_coverage} && $3 - $2 <= {params.max_length}' {input[0]} > {output}")
 
 # Annotate assembly candidates with coverage.
 rule annotate_coverage_for_candidates:
@@ -204,6 +204,11 @@ rule classify_gaps_in_aligned_reads:
     input: "gaps_in_aligned_reads/{alignment_name}.bed"
     output: "aligned_reads_{event_type}/{alignment_name}.bed"
     shell: """awk '$4 == "{wildcards.event_type}"' {input} | sort -k 1,1 -k 2,2n > {output}"""
+
+rule collect_gaps_in_aligned_reads:
+    input: expand("gaps_in_aligned_reads/{alignment_name}.bed", alignment_name=ALIGNMENT_NAMES)
+    output: "gaps_in_aligned_reads.bed.gz"
+    shell: "cut -f 1-4,8 {input} | sort -k 1,1 -k 2,2n | bgzip -c > {output}; tabix -p bed {output}"
 
 # Parse CIGAR string of aligned reads for insertions and deletions.
 rule find_gaps_in_aligned_reads:

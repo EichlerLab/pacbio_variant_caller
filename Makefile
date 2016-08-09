@@ -4,7 +4,7 @@
 
 PWD  = $(shell pwd)
 
-all: bin/bedtools bin/samtools bin/bcftools bin/freebayes bin/blasr bin/PBcR bin/java dist/miniconda/envs/python2/bin/quiver dist/miniconda/envs/python2/bin/cmph5tools.py bin/RepeatMasker bin/bwa
+all: bin/bedtools bin/samtools bin/bcftools bin/freebayes bin/blasr bin/canu bin/java dist/miniconda/envs/python2/bin/quiver dist/miniconda/envs/python2/bin/cmph5tools.py bin/RepeatMasker bin/bwa
 
 #
 # Install core genomics tools.
@@ -58,19 +58,13 @@ dist/htslib/libhts.a:
 	-@ln -s ../dist/htslib/tabix bin/tabix
 
 #
-# Install Celera/PBcR and its dependencies.
+# Install Canu and its dependencies.
 #
 
-bin/java:
-	-cd dist/java && $(MAKE)
-	-@ln -s ../dist/java/jre1.8.0_65/bin/java bin/java
-
-bin/PBcR: dist/bz2/bin/bzip2
-	-cd dist/celera && $(MAKE)
-	-@ln -s ../dist/celera/wgs-8.3rc2/Linux-amd64/bin/PBcR bin/PBcR
-
-dist/bz2/bin/bzip2:
-	-cd dist/bz2 && $(MAKE)
+bin/canu:
+	git submodule update --init dist/canu
+	-cd dist/canu/src && $(MAKE)
+	-@ln -s ../dist/canu/Linux-amd64/bin/canu bin/canu
 
 #
 # Install BLASR and its dependencies.

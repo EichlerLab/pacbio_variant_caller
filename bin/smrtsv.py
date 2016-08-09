@@ -111,7 +111,7 @@ def _run_snake_target(args, *cmd):
     ]
 
     if args.dryrun:
-        prefix.append("-n")
+        prefix.append("-npq")
 
     if args.distribute:
         prefix.extend(CLUSTER_FLAG)

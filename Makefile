@@ -4,7 +4,7 @@
 
 PWD  = $(shell pwd)
 
-all: bin/bedtools bin/samtools bin/bcftools bin/freebayes bin/blasr bin/canu bin/java dist/miniconda/envs/python2/bin/quiver dist/miniconda/envs/python2/bin/cmph5tools.py bin/RepeatMasker bin/bwa
+all: bin/bedtools bin/samtools bin/bcftools bin/freebayes bin/blasr bin/canu dist/miniconda/envs/python2/bin/quiver dist/miniconda/envs/python2/bin/cmph5tools.py bin/RepeatMasker bin/bwa
 
 #
 # Install core genomics tools.

@@ -11,6 +11,7 @@ else:
     configfile: "%s/../config.template.json" % SNAKEMAKE_DIR
 
 INPUT_READS = config.get("reads", "input.fofn")
+INPUT_GAPS = config.get("gaps", "gaps_in_aligned_reads.bed.gz")
 CELERA_SPEC = config.get("celera_spec", "%s/../celera/pacbio.local_human.spec" % SNAKEMAKE_DIR)
 CHROMOSOME_LENGTHS = config.get("reference_index", "%s.fai" % config["reference"])
 
@@ -42,11 +43,21 @@ REGION_SIZE = str(operator.sub(*map(int, reversed(REGION.split("-")[1:3]))))
 # Define rules.
 #
 
-rule align_consensus_to_reference_region:
-    input: "consensus.trimmed.fasta", "reference_region.fasta"
+rule collect_consensus_assemblies:
+    input: dynamic("consensus_alignments/{haplotype}.sam")
     output: "consensus_reference_alignment.sam"
+    shell: "cat {input} > {output}"
+
+# Align local assembly with BLASR.
+rule align_consensus_to_reference_region:
+    input: "trimmed_consensus/{haplotype}.fasta", "reference_region.fasta"
+    output: "consensus_alignments/{haplotype}.sam"
     params: sge_opts="", mapping_quality_threshold=str(config["mapping_quality"]), alignment_parameters=config["alignment_parameters"]
-    shell: """blasr {input} -clipping subread -out /dev/stdout -sam {params.alignment_parameters} | samtools view -q {params.mapping_quality_threshold} - | awk 'OFS="\\t" {{ sub(/:/, "-", $3); num_of_pieces=split($3, pieces, "-"); $3 = pieces[1]; $4 = pieces[2] + $4; print }}' | sed 's/RG:Z:\w\+\\t//' > {output}"""
+    shell: """blasr {input} -clipping subread -out /dev/stdout -sam {params.alignment_parameters} | samtools view -q {params.mapping_quality_threshold} - | awk 'OFS="\\t" {{ sub(/:/, "-", $3); num_of_pieces=split($3, pieces, "-"); $3 = pieces[1]; $4 = pieces[2] + $4; $1="{wildcards.haplotype}-"$1; print }}' | sed 's/RG:Z:\w\+\\t//' > {output}"""
+
+#
+# Build assembly and get reference region.
+#
 
 rule extract_reference_sequence:
     input: reference=config["reference"], region="reference_region.bed"
@@ -60,14 +71,14 @@ rule create_reference_region:
     shell: "echo {REGION} | sed 's/-/\\t/g' > {output}"
 
 rule trim_consensus:
-    input: "consensus.fasta"
-    output: "consensus.trimmed.fasta"
+    input: "consensus/{haplotype}.fasta"
+    output: "trimmed_consensus/{haplotype}.fasta"
     params: sge_opts=""
     shell: "{SNAKEMAKE_DIR}/../scripts/trim_lowercase.py {input} {output}"
 
 rule quiver_assembly:
-    input: assembly="assembly.fasta", alignments="alignment.cmp.h5", assembly_index="assembly.fasta.fai"
-    output: "consensus.fasta"
+    input: assembly="assembly/{haplotype}.fasta", alignments="alignment/{haplotype}.cmp.h5", assembly_index="assembly/{haplotype}.fasta.fai"
+    output: "consensus/{haplotype}.fasta"
     params: sge_opts="", threads="4"
     run:
         try:
@@ -78,8 +89,8 @@ rule quiver_assembly:
             shell("cat {input.assembly} > {output}")
 
 rule convert_assembly_alignments_to_hdf5:
-    input: alignments="alignment.sam", assembly="assembly.fasta", reads="reads.bas.h5"
-    output: "alignment.cmp.h5"
+    input: alignments="alignment/{haplotype}.sam", assembly="assembly/{haplotype}.fasta", reads="reads_bas/{haplotype}.bas.h5"
+    output: "alignment/{haplotype}.cmp.h5"
     params: sge_opts=""
     shell:
         "samtoh5 {input.alignments} {input.assembly} {output} -useShortRefName; "
@@ -88,28 +99,28 @@ rule convert_assembly_alignments_to_hdf5:
         "{SNAKEMAKE_DIR}/../scripts/LoadGenericChemistry.py {BAS_TEMPLATE} {output}"
 
 rule map_reads_to_assembly:
-    input: "reads.bas.h5", "assembly.fasta"
-    output: "alignment.sam"
+    input: "reads_bas/{haplotype}.bas.h5", "assembly/{haplotype}.fasta"
+    output: "alignment/{haplotype}.sam"
     params: sge_opts="", threads="4"
     shell: "blasr {input} -sam -bestn 1 -out /dev/stdout -nproc {params.threads} | samtools view -h -F 0x4 -S - > {output}"
 
 rule index_assembly:
-    input: "assembly.fasta"
-    output: "assembly.fasta.fai"
+    input: "assembly/{haplotype}.fasta"
+    output: "assembly/{haplotype}.fasta.fai"
     params: sge_opts=""
     shell: "samtools faidx {input}"
 
 rule assemble_reads:
-    input: "reads.fastq"
-    output: "assembly.fasta"
+    input: "reads_fastq/{haplotype}.fastq"
+    output: "assembly/{haplotype}.fasta"
     params: sge_opts="-l mfree=4G -pe serial 2 -l disk_free=10G", threads="4", read_length="1000", partitions="50", max_runtime="10m"
     run:
-        assembly_output = "local/9-terminator/asm.ctg.fasta"
-        unitig_output = "local/9-terminator/asm.utg.fasta"
+        assembly_output = "assembly_%s/asm.contigs.fasta" % wildcards.haplotype
+        unitig_output = "assembly_%s/asm.utg.fasta" % wildcards.haplotype
         assembly_exists = False
 
         try:
-            shell("timeout {params.max_runtime} PBcR -threads {params.threads} -length {params.read_length} -partitions {params.partitions} -l local -s {CELERA_SPEC} -fastq {input} genomeSize={REGION_SIZE} assembleMinCoverage=5 &> assembly.log")
+            shell("canu -pacbio-raw {input} genomeSize={REGION_SIZE} -d assembly_{wildcards.haplotype} -p asm useGrid=false corMhapSensitivity=high corMinCoverage=2 errorRate=0.035 minReadLength={params.read_length}")
         except:
             shell("""echo -e "{REGION}\tassembly_crashed" >> %s""" % config["log"])
 
@@ -129,34 +140,36 @@ rule assemble_reads:
             shell("echo -e '>{REGION}\nN' > {output}")
 
 rule convert_reads_to_bas:
-    input: "reads.bam"
-    output: "reads.bas.h5"
+    input: "reads_bam/{haplotype}.bam"
+    output: "reads_bas/{haplotype}.bas.h5"
     params: sge_opts=""
     shell: "samtools view -h {input} | samtobas /dev/stdin {output}"
 
 rule convert_reads_to_fastq:
-    input: "reads.fasta"
-    output: "reads.fastq"
+    input: "reads_fasta/{haplotype}.fasta"
+    output: "reads_fastq/{haplotype}.fastq"
     params: sge_opts=""
     shell: "{SNAKEMAKE_DIR}/../scripts/FastaToFakeFastq.py {input} {output}"
 
 rule convert_reads_to_fasta:
-    input: "reads.bam"
-    output: "reads.fasta"
+    input: "reads_bam/{haplotype}.bam"
+    output: "reads_fasta/{haplotype}.fasta"
     params: sge_opts=""
     shell: """samtools view {input} | awk '{{ print ">"$1; print $10 }}' | {SNAKEMAKE_DIR}/../scripts/FormatFasta.py --fakename > {output}"""
 
-rule convert_reads_to_bam:
-    input: "reads.sam"
-    output: "reads.bam"
+rule phase_reads:
+    input: "reads.bam", INPUT_GAPS
+    output: dynamic("reads_bam/{haplotype}.bam")
     params: sge_opts=""
-    shell: "samtools view -buS {input} > {output}"
+    shell: "mkdir -p reads_bam; python phase_reads_by_gaps.py --min_proportion_of_phased_reads=0.25 --reciprocal_overlap=0.5 --name_column=4 --type_column=3 {input} {STANDARD_REGION} reads_bam/haplotype"
 
 rule get_reads:
     input: ALIGNMENTS
-    output: "reads.sam"
+    output: "reads.bam"
     params: sge_opts="", mapping_quality_threshold=str(config["mapping_quality"]), max_delay=str(config.get("minutes_to_delay_jobs", DEFAULT_MAX_DELAY))
     shell:
         "sleep $[ ( $RANDOM % {params.max_delay} ) ]m; "
-        "head -n 1 {input} | xargs -i samtools view -H {{}} > {output}; "
-        "cat {input} | xargs -i samtools view -q {params.mapping_quality_threshold} {{}} {STANDARD_REGION} >> {output}"
+        "{{ "
+        "head -n 1 {input} | xargs -i samtools view -H {{}}; "
+        "cat {input} | xargs -i samtools view -q {params.mapping_quality_threshold} {{}} {STANDARD_REGION};"
+        "}} | samtools view -bS | samtools sort - > {output}; samtools index {output}"

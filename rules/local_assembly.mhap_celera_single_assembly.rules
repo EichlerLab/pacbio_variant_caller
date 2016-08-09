@@ -161,7 +161,7 @@ rule phase_reads:
     input: "reads.bam", INPUT_GAPS
     output: dynamic("reads_bam/{haplotype}.bam")
     params: sge_opts=""
-    shell: "mkdir -p reads_bam; python phase_reads_by_gaps.py --min_proportion_of_phased_reads=0.25 --reciprocal_overlap=0.5 --name_column=4 --type_column=3 {input} {STANDARD_REGION} reads_bam/haplotype"
+    shell: "mkdir -p reads_bam; python {SNAKEMAKE_DIR}/../scripts/phase_reads_by_gaps.py --min_proportion_of_phased_reads=0.25 --reciprocal_overlap=0.5 --name_column=4 --type_column=3 {input} {STANDARD_REGION} reads_bam/haplotype"
 
 rule get_reads:
     input: ALIGNMENTS

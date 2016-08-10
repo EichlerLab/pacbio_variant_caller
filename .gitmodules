@@ -34,3 +34,6 @@
 [submodule "dist/canu"]
 	path = dist/canu
 	url = git@github.com:marbl/canu.git
+[submodule "dist/vcflib"]
+	path = dist/vcflib
+	url = git@github.com:vcflib/vcflib.git

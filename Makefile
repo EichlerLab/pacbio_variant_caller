@@ -4,7 +4,7 @@
 
 PWD  = $(shell pwd)
 
-all: bin/bedtools bin/samtools bin/bcftools bin/freebayes bin/blasr bin/canu dist/miniconda/envs/python2/bin/quiver dist/miniconda/envs/python2/bin/cmph5tools.py bin/RepeatMasker bin/bwa
+all: bin/bedtools bin/samtools bin/bcftools bin/freebayes bin/blasr bin/canu dist/miniconda/envs/python2/bin/quiver dist/miniconda/envs/python2/bin/cmph5tools.py bin/RepeatMasker bin/bwa bin/vcffixup
 
 #
 # Install core genomics tools.
@@ -26,6 +26,12 @@ bin/RepeatMasker: bin/phmmer
 bin/phmmer:
 	-cd dist/hmmer && make
 	-@cp -f dist/hmmer/bin/* bin/
+
+bin/vcffixup:
+	git submodule update --init --recursive dist/vcflib
+	cd dist/vcflib && git submodule update --init --recursive
+	-cd dist/vcflib && $(MAKE)
+	-@ln -s ../dist/vcflib/bin/vcffixup bin/vcffixup
 
 bin/bedtools:
 	git submodule update --init dist/bedtools

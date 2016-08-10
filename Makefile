@@ -61,7 +61,11 @@ dist/htslib/libhts.a:
 # Install Canu and its dependencies.
 #
 
-bin/canu:
+bin/java:
+	-cd dist/java && $(MAKE)
+	-@ln -s ../dist/java/jre1.8.0_65/bin/java bin/java
+
+bin/canu: bin/java
 	git submodule update --init dist/canu
 	-cd dist/canu/src && $(MAKE)
 	-@ln -s ../dist/canu/Linux-amd64/bin/canu bin/canu

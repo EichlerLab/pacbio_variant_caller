@@ -13,6 +13,28 @@ def calculate_variant_quality(variant):
         return 0
 
 
+def write_vcf(vcf_filename, calls):
+    with open(vcf_filename, "w") as vcf:
+        vcf.write("##fileformat=VCFv4.2\n")
+        vcf.write("##fileDate=%s\n" % datetime.date.strftime(datetime.date.today(), "%Y%m%d"))
+        vcf.write("##source=SMRT_SV\n")
+        vcf.write('##INFO=<ID=SAMPLES,Number=1,Type=String,Description="Samples with the given variant">' + "\n")
+        vcf.write('##INFO=<ID=DP,Number=1,Type=Integer,Description="Mean depth of raw reads">' + "\n")
+        vcf.write('##INFO=<ID=CONTIG_DEPTH,Number=1,Type=Integer,Description="Total depth of local assemblies">' + "\n")
+        vcf.write('##INFO=<ID=CONTIG_SUPPORT,Number=1,Type=Integer,Description="Depth of local assemblies supporting variant">' + "\n")
+        vcf.write('##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">' + "\n")
+        vcf.write('##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Difference in length between REF and ALT alleles">' + "\n")
+        vcf.write('##INFO=<ID=END,Number=1,Type=Integer,Description="End coordinate of this variant">' + "\n")
+        vcf.write('##INFO=<ID=CONTIG,Number=1,Type=String,Description="Name of alternate assembly contig">' + "\n")
+        vcf.write('##INFO=<ID=CONTIG_START,Number=1,Type=Integer,Description="Start coordinate of this variant in the alternate assembly contig">' + "\n")
+        vcf.write('##INFO=<ID=CONTIG_END,Number=1,Type=Integer,Description="End coordinate of this variant in the alternate assembly contig">' + "\n")
+        vcf.write('##INFO=<ID=REPEAT_TYPE,Number=1,Type=String,Description="Repeat classification of variant content">' + "\n")
+        vcf.write('##INFO=<ID=SEQ,Number=1,Type=String,Description="Sequence associated with variant">' + "\n")
+
+        if len(calls) > 0:
+            calls.to_csv(vcf, sep="\t", index=False)
+
+
 def convert_bed_to_vcf(bed_filename, reference_filename, vcf_filename, sample, variant_type):
     # Get variants.
     if variant_type == "sv":
@@ -29,6 +51,11 @@ def convert_bed_to_vcf(bed_filename, reference_filename, vcf_filename, sample, v
         raise Exception("Unsupported variant type: %s" % variant_type)
 
     calls = pd.read_table(bed_filename, header=None, usecols=columns, names=names)
+
+    if len(calls) == 0:
+        write_vcf(vcf_filename, [])
+        return
+
     calls["sample_name"] = sample
     calls["call_id"] = "."
     calls["quality"] = calls.apply(calculate_variant_quality, axis=1)
@@ -101,23 +128,7 @@ def convert_bed_to_vcf(bed_filename, reference_filename, vcf_filename, sample, v
     simple_calls = calls[["chr", "start", "call_id", "reference", "alt", "quality", "filter", "info"]].rename_axis({"chr": "#CHROM", "start": "POS", "reference": "REF", "call_id": "ID", "quality": "QUAL", "info": "INFO", "alt": "ALT", "filter": "FILTER"}, axis=1)
 
     # Save genotypes as tab-delimited file.
-    with open(vcf_filename, "w") as vcf:
-        vcf.write("##fileformat=VCFv4.2\n")
-        vcf.write("##fileDate=%s\n" % datetime.date.strftime(datetime.date.today(), "%Y%m%d"))
-        vcf.write("##source=SMRT_SV\n")
-        vcf.write('##INFO=<ID=SAMPLES,Number=1,Type=String,Description="Samples with the given variant">' + "\n")
-        vcf.write('##INFO=<ID=DP,Number=1,Type=Integer,Description="Mean depth of raw reads">' + "\n")
-        vcf.write('##INFO=<ID=CONTIG_DEPTH,Number=1,Type=Integer,Description="Total depth of local assemblies">' + "\n")
-        vcf.write('##INFO=<ID=CONTIG_SUPPORT,Number=1,Type=Integer,Description="Depth of local assemblies supporting variant">' + "\n")
-        vcf.write('##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">' + "\n")
-        vcf.write('##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Difference in length between REF and ALT alleles">' + "\n")
-        vcf.write('##INFO=<ID=END,Number=1,Type=Integer,Description="End coordinate of this variant">' + "\n")
-        vcf.write('##INFO=<ID=CONTIG,Number=1,Type=String,Description="Name of alternate assembly contig">' + "\n")
-        vcf.write('##INFO=<ID=CONTIG_START,Number=1,Type=Integer,Description="Start coordinate of this variant in the alternate assembly contig">' + "\n")
-        vcf.write('##INFO=<ID=CONTIG_END,Number=1,Type=Integer,Description="End coordinate of this variant in the alternate assembly contig">' + "\n")
-        vcf.write('##INFO=<ID=REPEAT_TYPE,Number=1,Type=String,Description="Repeat classification of variant content">' + "\n")
-        vcf.write('##INFO=<ID=SEQ,Number=1,Type=String,Description="Sequence associated with variant">' + "\n")
-        simple_calls.to_csv(vcf, sep="\t", index=False)
+    write_vcf(vcf_filename, simple_calls)
 
 
 if __name__ == "__main__":

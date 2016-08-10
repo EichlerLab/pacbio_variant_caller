@@ -120,8 +120,9 @@ rule assemble_reads:
         assembly_exists = False
 
         try:
-            shell("canu -pacbio-raw {input} genomeSize={REGION_SIZE} -d assembly_{wildcards.haplotype} -p asm useGrid=false corMhapSensitivity=high corMinCoverage=2 errorRate=0.035 minReadLength={params.read_length}")
+            shell("canu -pacbio-raw {input} genomeSize={REGION_SIZE} -d assembly_{wildcards.haplotype} -p asm useGrid=false corMhapSensitivity=high corMinCoverage=2 errorRate=0.035 minReadLength={params.read_length} &> assembly.log")
         except:
+            shell("touch assembly.log")
             shell("""echo -e "{REGION}\tassembly_crashed" >> %s""" % config["log"])
 
         if os.path.exists(assembly_output) and os.stat(assembly_output).st_size > 0:

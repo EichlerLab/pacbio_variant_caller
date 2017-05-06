@@ -1,0 +1,8 @@
+title: SMRT-SV
+description: Structural variant and indel caller for PacBio reads
+google_analytics: 
+show_downloads: true
+theme: jekyll-theme-slate
+
+gems:
+  - jekyll-mentions

@@ -4,6 +4,16 @@ Structural variant (SV) and indel caller for PacBio reads based on methods from
 [Chaisson et
 al. 2014](http://www.nature.com/nature/journal/vaop/ncurrent/full/nature13907.html).
 
+## Publication
+
+**Discovery and genotyping of structural variation from long-read haploid genome sequence data** <br />
+Huddleston J, Chaisson MJP, Steinberg KM, Warren W, Hoekzema K, Gordon D, Graves-Lindsay TA, Munson KM, Kronenberg ZN, Vives L, Peluso P, Boitano M, Chin CS, Korlach J, Wilson RK, Eichler EE <br />
+https://doi.org/10.1101/gr.214007.116
+
+### Data
+
+Whole genome sequences, structural variants, and Sanger sequences from variant validations are available through the [BioProject PRJNA335618](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA335618).
+
 ## Installation
 
 SMRT-SV requires git, Python (2.6.6 or later) and Perl (5.10.1 or later) for

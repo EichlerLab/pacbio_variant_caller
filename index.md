@@ -8,7 +8,7 @@ al. 2014](http://www.nature.com/nature/journal/vaop/ncurrent/full/nature13907.ht
 
 **Discovery and genotyping of structural variation from long-read haploid genome sequence data** <br />
 Huddleston J, Chaisson MJP, Steinberg KM, Warren W, Hoekzema K, Gordon D, Graves-Lindsay TA, Munson KM, Kronenberg ZN, Vives L, Peluso P, Boitano M, Chin CS, Korlach J, Wilson RK, Eichler EE <br />
-https://doi.org/10.1101/gr.214007.116
+[https://doi.org/10.1101/gr.214007.116](https://doi.org/10.1101/gr.214007.116)
 
 ### Data
 

@@ -14,6 +14,8 @@ https://doi.org/10.1101/gr.214007.116
 
 Whole genome sequences, structural variants, and Sanger sequences from variant validations are available through the [BioProject PRJNA335618](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA335618).
 
+Small indels are available here for [CHM1](data/indels/CHM1_indels.vcf.gz) and [CHM13](data/indels/CHM13_indels.vcf.gz).
+
 ## Installation
 
 SMRT-SV requires git, Python (2.6.6 or later) and Perl (5.10.1 or later) for

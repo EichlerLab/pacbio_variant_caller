@@ -86,6 +86,9 @@ yeast.
 
 ### Download PacBio reads
 
+Note that this data set requires ~33 GB of disk space for the reads and another
+~30 GB for the read alignments.
+
 ```bash
 # List of AWS-hosted files from PacBio including raw reads and an HGAP assembly.
 wget https://gist.githubusercontent.com/pb-jchin/6359919/raw/9c172c7ff7cbc0193ce89e715215ce912f3f30e6/gistfile1.txt

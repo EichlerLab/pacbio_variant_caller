@@ -2,6 +2,7 @@
 #  A makefile for dist  #
 ############################
 
+SHELL = /bin/bash
 PWD  = $(shell pwd)
 
 all: bin/bedtools bin/samtools bin/bcftools bin/freebayes bin/blasr bin/PBcR bin/java dist/miniconda/envs/python2/bin/quiver dist/miniconda/envs/python2/bin/cmph5tools.py bin/RepeatMasker bin/bwa bin/vcffixup
@@ -104,15 +105,15 @@ dist/boost/boost_1_61_0:
 
 dist/miniconda/envs/python2/lib/python2.7/site-packages/pbcore-1.0.0-py2.7.egg: dist/miniconda/bin/activate
 	git submodule update --init dist/pbcore
-	-cd dist/pbcore && source $(PWD)/dist/miniconda/bin/activate python2 && sed -i 's/pysam == 0.8.1/pysam >= 0.8.1/' setup.py && python setup.py install && make clean
+	-cd dist/pbcore && . $(PWD)/dist/miniconda/bin/activate python2 && sed -i 's/pysam == 0.8.1/pysam >= 0.8.1/' setup.py && python setup.py install && make clean
 
 dist/miniconda/envs/python2/lib/python2.7/site-packages/ConsensusCore-1.0.0-py2.7.egg: dist/swig dist/swig/bin/swig dist/miniconda/bin/activate dist/boost/boost_1_61_0
 	git submodule update --init dist/ConsensusCore
-	-cd dist/ConsensusCore && source $(PWD)/dist/miniconda/bin/activate python2 && python setup.py install --boost=$(PWD)/dist/boost/boost_1_61_0 --swig=$(PWD)/$</bin/swig --swig-lib=$(PWD)/$</share/swig/3.0.8 && make clean
+	-cd dist/ConsensusCore && . $(PWD)/dist/miniconda/bin/activate python2 && python setup.py install --boost=$(PWD)/dist/boost/boost_1_61_0 --swig=$(PWD)/$</bin/swig --swig-lib=$(PWD)/$</share/swig/3.0.8 && make clean
 
 dist/miniconda/envs/python2/bin/quiver: dist/miniconda/envs/python2/lib/python2.7/site-packages/pbcore-1.0.0-py2.7.egg dist/miniconda/envs/python2/lib/python2.7/site-packages/ConsensusCore-1.0.0-py2.7.egg dist/miniconda/bin/activate
 	git submodule update --init dist/GenomicConsensus
-	-cd dist/GenomicConsensus && source $(PWD)/dist/miniconda/bin/activate python2 && sed -i 's/pysam == 0.8.1/pysam >= 0.8.1/' setup.py && python setup.py install && make clean
+	-cd dist/GenomicConsensus && . $(PWD)/dist/miniconda/bin/activate python2 && sed -i 's/pysam == 0.8.1/pysam >= 0.8.1/' setup.py && python setup.py install && make clean
 	touch $@
 
 #
@@ -121,11 +122,11 @@ dist/miniconda/envs/python2/bin/quiver: dist/miniconda/envs/python2/lib/python2.
 
 dist/miniconda/envs/python2/bin/cmph5tools.py: dist/miniconda/bin/activate
 	git submodule update --init dist/pbh5tools
-	-cd dist/pbh5tools && source $(PWD)/dist/miniconda/bin/activate python2 && python setup.py install
+	-cd dist/pbh5tools && . $(PWD)/dist/miniconda/bin/activate python2 && python setup.py install
 
 #
 # Install miniconda
 #
 
 dist/miniconda/bin/activate:
-	cd dist/miniconda && sh install.sh
+	cd dist/miniconda && ./install.sh

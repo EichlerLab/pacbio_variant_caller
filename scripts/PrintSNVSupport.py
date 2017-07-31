@@ -36,7 +36,7 @@ for line in bed:
         support.append(vals[5])
     first = False
 
-if (merge == False):
+if merge == False and prevVals is not None:
     v = prevVals[0:5] + [str(len(support))] + [";".join(support)]
     out.write("\t".join(v) + "\n")
     

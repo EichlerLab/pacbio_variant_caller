@@ -1,5 +1,12 @@
 # SMRT-SV
 
+This project has been replaced by SMRT-SV v2:
+https://github.com/EichlerLab/smrtsv2
+
+The branch of SMRT-SV in this repository is no longer maintained.
+
+## About
+
 Structural variant (SV) and indel caller for PacBio reads based on methods from
 [Chaisson et
 al. 2014](http://www.nature.com/nature/journal/vaop/ncurrent/full/nature13907.html).
